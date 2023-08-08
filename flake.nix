@@ -17,9 +17,14 @@
         "x86_64-linux"
       ];
 
-      perSystem = { pkgs, ... }:
+      perSystem = { lib, pkgs, ... }:
         let
+          inherit (lib)
+            makeBinPath
+            ;
           inherit (pkgs)
+            makeBinaryWrapper
+            nix
             stdenv
             zigHook
             zig_0_11
@@ -29,12 +34,20 @@
           packages.default = stdenv.mkDerivation {
             pname = "zon2nix";
             version = "0.1.0";
+
             src = ./.;
+
             nativeBuildInputs = [
+              makeBinaryWrapper
               (zigHook.override {
                 zig = zig_0_11;
               })
             ];
+
+            postInstall = ''
+              wrapProgram $out/bin/zon2nix \
+                --prefix PATH : ${makeBinPath [ nix ]}
+            '';
           };
         };
     };
