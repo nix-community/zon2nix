@@ -36,3 +36,7 @@ pub fn main() !void {
     try write(alloc, out.writer(), deps);
     try out.flush();
 }
+
+comptime {
+    std.testing.refAllDecls(@This());
+}
