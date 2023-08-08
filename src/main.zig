@@ -33,6 +33,6 @@ pub fn main() !void {
     try fetch(alloc, &deps);
 
     var out = io.bufferedWriter(io.getStdOut().writer());
-    try write(out.writer(), deps);
+    try write(alloc, out.writer(), deps);
     try out.flush();
 }
