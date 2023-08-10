@@ -19,10 +19,9 @@
       perSystem = { lib, pkgs, ... }:
         let
           inherit (lib)
-            makeBinPath
+            getExe
             ;
           inherit (pkgs)
-            makeBinaryWrapper
             nix
             stdenv
             zigHook
@@ -37,16 +36,18 @@
             src = ./.;
 
             nativeBuildInputs = [
-              makeBinaryWrapper
               (zigHook.override {
                 zig = zig_0_11;
               })
             ];
 
-            postInstall = ''
-              wrapProgram $out/bin/zon2nix \
-                --prefix PATH : ${makeBinPath [ nix ]}
-            '';
+            zigBuildFlags = [
+              "-Dnix=${getExe nix}"
+            ];
+
+            zigCheckFlags = [
+              "-Dnix=${getExe nix}"
+            ];
           };
         };
     };

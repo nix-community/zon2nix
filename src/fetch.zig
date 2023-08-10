@@ -8,6 +8,8 @@ const fs = std.fs;
 const json = std.json;
 const log = std.log;
 
+const nix = @import("options").nix;
+
 const Dependency = @import("Dependency.zig");
 const parse = @import("parse.zig").parse;
 
@@ -34,7 +36,7 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
 
             var child = try alloc.create(ChildProcess);
             const ref = try fmt.allocPrint(alloc, "tarball+{s}", .{dep.url});
-            const argv = &[_][]const u8{ "nix", "flake", "prefetch", "--json", "--extra-experimental-features", "flakes nix-command", ref };
+            const argv = &[_][]const u8{ nix, "flake", "prefetch", "--json", "--extra-experimental-features", "flakes nix-command", ref };
             child.* = ChildProcess.init(argv, alloc);
             child.stdin_behavior = .Ignore;
             child.stdout_behavior = .Pipe;
