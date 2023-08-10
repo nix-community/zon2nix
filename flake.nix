@@ -24,8 +24,7 @@
           inherit (pkgs)
             nix
             stdenv
-            zigHook
-            zig_0_11
+            zig
             ;
         in
         {
@@ -36,9 +35,7 @@
             src = ./.;
 
             nativeBuildInputs = [
-              (zigHook.override {
-                zig = zig_0_11;
-              })
+              zig.hook
             ];
 
             zigBuildFlags = [
