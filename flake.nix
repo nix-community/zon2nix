@@ -16,6 +16,11 @@
         "x86_64-linux"
       ];
 
+      flake.herculesCI.ciSystems = [
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
+
       perSystem = { lib, pkgs, ... }:
         let
           inherit (lib)
