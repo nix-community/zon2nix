@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.2 - 2023-09-03
+
+### Changes
+
+- move to nix-community
+
 ## v0.1.1 - 2023-08-08
 
 ### Fixes
