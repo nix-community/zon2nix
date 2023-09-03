@@ -1,4 +1,6 @@
 {
+  description = "zon2nix helps you package Zig project with Nix, by converting the dependencies in a build.zig.zon to a Nix expression.";
+
   inputs = {
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
