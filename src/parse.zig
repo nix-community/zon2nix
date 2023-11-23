@@ -39,7 +39,8 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
             var has_url = false;
             var has_hash = false;
 
-            const dep_init = ast.fullStructInit(&buf, dep_idx) orelse {
+            var buf2: [2]Index = undefined;
+            const dep_init = ast.fullStructInit(&buf2, dep_idx) orelse {
                 return error.parseError;
             };
 
