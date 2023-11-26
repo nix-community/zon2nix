@@ -5,6 +5,7 @@ const File = std.fs.File;
 const Index = std.zig.Ast.Node.Index;
 const StringHashMap = std.StringHashMap;
 const mem = std.mem;
+const log = std.log;
 const string_literal = std.zig.string_literal;
 
 const Dependency = @import("Dependency.zig");
@@ -17,6 +18,7 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
 
     var buf: [2]Index = undefined;
     const root_init = ast.fullStructInit(&buf, ast.nodes.items(.data)[0].lhs) orelse {
+        log.err("Could not parse build.zig.zon", .{});
         return error.ParseError;
     };
 
@@ -26,6 +28,7 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
         }
 
         const deps_init = ast.fullStructInit(&buf, field_idx) orelse {
+            log.err("Could not parse the dependencies section", .{});
             return error.ParseError;
         };
 
@@ -42,11 +45,13 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
 
             var buf2: [2]Index = undefined;
             const dep_init = ast.fullStructInit(&buf2, dep_idx) orelse {
+                log.err("A dependency could not be parsed at index {}", .{dep_idx});
                 return error.parseError;
             };
 
+            var name: []const u8 = "";
             for (dep_init.ast.fields) |dep_field_idx| {
-                const name = try parseFieldName(alloc, ast, dep_field_idx);
+                name = try parseFieldName(alloc, ast, dep_field_idx);
 
                 if (mem.eql(u8, name, "url")) {
                     dep.url = try parseString(alloc, ast, dep_field_idx);
@@ -62,6 +67,7 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
             if (has_url and has_hash) {
                 _ = try deps.getOrPutValue(hash, dep);
             } else if (!has_path) {
+                log.err("The dependency \"{s}\" has neither a hash/url pair nor a path", .{name});
                 return error.parseError;
             }
         }
