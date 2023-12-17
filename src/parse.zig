@@ -38,8 +38,10 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
             var hash: []const u8 = undefined;
             var has_url = false;
             var has_hash = false;
+            var has_path = false;
 
-            const dep_init = ast.fullStructInit(&buf, dep_idx) orelse {
+            var buf2: [2]Index = undefined;
+            const dep_init = ast.fullStructInit(&buf2, dep_idx) orelse {
                 return error.parseError;
             };
 
@@ -52,12 +54,14 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
                 } else if (mem.eql(u8, name, "hash")) {
                     hash = try parseString(alloc, ast, dep_field_idx);
                     has_hash = true;
+                } else if (mem.eql(u8, name, "path")) {
+                    has_path = true;
                 }
             }
 
             if (has_url and has_hash) {
                 _ = try deps.getOrPutValue(hash, dep);
-            } else {
+            } else if (!has_path) {
                 return error.parseError;
             }
         }
