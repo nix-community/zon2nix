@@ -4,13 +4,14 @@ const fs = std.fs;
 const heap = std.heap;
 const io = std.io;
 const process = std.process;
+const builtin = @import("builtin");
 
 const Dependency = @import("Dependency.zig");
 const fetch = @import("fetch.zig").fetch;
 const parse = @import("parse.zig").parse;
 const write = @import("codegen.zig").write;
 
-pub fn main() !void {
+pub fn run() !void {
     var args = process.args();
     _ = args.skip();
     const dir = fs.cwd();
@@ -35,6 +36,14 @@ pub fn main() !void {
     var out = io.bufferedWriter(io.getStdOut().writer());
     try write(alloc, out.writer(), deps);
     try out.flush();
+}
+
+pub fn main() !void {
+    if (builtin.mode == .Debug) {
+        try run();
+    } else {
+        run() catch std.os.exit(1);
+    }
 }
 
 comptime {
