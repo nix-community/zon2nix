@@ -14,7 +14,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    exe.addOptions("options", options);
+    exe.root_module.addOptions("options", options);
     exe.linkLibC();
     b.installArtifact(exe);
 
@@ -31,7 +31,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    unit_tests.addOptions("options", options);
+    unit_tests.root_module.addOptions("options", options);
     unit_tests.linkLibC();
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test", "Run unit tests");
