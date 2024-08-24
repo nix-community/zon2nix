@@ -15,8 +15,8 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
 
     const ast = try Ast.parse(alloc, content, .zon);
 
-    var buf: [2]Index = undefined;
-    const root_init = ast.fullStructInit(&buf, ast.nodes.items(.data)[0].lhs) orelse {
+    var root_buf: [2]Index = undefined;
+    const root_init = ast.fullStructInit(&root_buf, ast.nodes.items(.data)[0].lhs) orelse {
         return error.ParseError;
     };
 
@@ -25,7 +25,8 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
             continue;
         }
 
-        const deps_init = ast.fullStructInit(&buf, field_idx) orelse {
+        var deps_buf: [2]Index = undefined;
+        const deps_init = ast.fullStructInit(&deps_buf, field_idx) orelse {
             return error.ParseError;
         };
 
@@ -39,7 +40,8 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
             var has_url = false;
             var has_hash = false;
 
-            const dep_init = ast.fullStructInit(&buf, dep_idx) orelse {
+            var dep_buf: [2]Index = undefined;
+            const dep_init = ast.fullStructInit(&dep_buf, dep_idx) orelse {
                 return error.parseError;
             };
 
