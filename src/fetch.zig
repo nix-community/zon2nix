@@ -36,7 +36,13 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
             }
 
             var child = try alloc.create(ChildProcess);
-            const ref = try fmt.allocPrint(alloc, "tarball+{s}", .{dep.url});
+            const ref = ref: {
+                if (dep.rev.len == 0) {
+                    break :ref try fmt.allocPrint(alloc, "tarball+{s}", .{dep.url});
+                } else {
+                    break :ref try fmt.allocPrint(alloc, "{s}?rev={s}", .{ dep.url, dep.rev });
+                }
+            };
             log.debug("running \"nix flake prefetch --json --extra-experimental-features 'flakes nix-command' {s}\"", .{ref});
             const argv = &[_][]const u8{ nix, "flake", "prefetch", "--json", "--extra-experimental-features", "flakes nix-command", ref };
             child.* = ChildProcess.init(argv, alloc);
