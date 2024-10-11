@@ -55,10 +55,9 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
                     if (std.mem.startsWith(u8, url, "https://")) {
                         dep.url = url;
                     } else if (std.mem.startsWith(u8, url, "git+https://")) {
-                        const url_start = std.mem.indexOf(u8, url, "git+https://") orelse return error.InvalidInput;
-                        const url_end = std.mem.indexOf(u8, url[url_start..], "#") orelse return error.InvalidInput;
-                        const raw_url = url[url_start .. url_start + url_end];
-                        const hash_start = url_end + url_start + 1; // +1 to skip the '#'
+                        const url_end = std.mem.indexOf(u8, url[0..], "#").?;
+                        const raw_url = url[4..url_end];
+                        const hash_start = url_end + 1; // +1 to skip the '#'
                         const git_hash = url[hash_start..];
                         dep.url = raw_url;
                         dep.rev = git_hash;
@@ -107,5 +106,7 @@ test parse {
     try testing.expectEqualStrings(deps.get("122048992ca58a78318b6eba4f65c692564be5af3b30fbef50cd4abeda981b2e7fa5").?.url, "https://github.com/ziglibs/known-folders/archive/fa75e1bc672952efa0cf06160bbd942b47f6d59b.tar.gz");
     try testing.expectEqualStrings(deps.get("122089a8247a693cad53beb161bde6c30f71376cd4298798d45b32740c3581405864").?.url, "https://github.com/ziglibs/diffz/archive/90353d401c59e2ca5ed0abe5444c29ad3d7489aa.tar.gz");
     try testing.expectEqualStrings(deps.get("1220363c7e27b2d3f39de6ff6e90f9537a0634199860fea237a55ddb1e1717f5d6a5").?.url, "https://gist.github.com/antlilja/8372900fcc09e38d7b0b6bbaddad3904/archive/6c3321e0969ff2463f8335da5601986cf2108690.tar.gz");
-    try testing.expectEqualStrings(deps.get("1220115ff095a3c970cc90fce115294ba67d6fbc4927472dc856abc51e2a1a9364d7").?.url, "git+https://github.com/kristoff-it/ziggy#c66f47bc632c66668d61fa06eda112b41d6e5130");
+    const git_dep = deps.get("1220115ff095a3c970cc90fce115294ba67d6fbc4927472dc856abc51e2a1a9364d7").?;
+    try testing.expectEqualStrings(git_dep.url, "https://github.com/kristoff-it/ziggy");
+    try testing.expectEqualStrings(git_dep.rev, "c66f47bc632c66668d61fa06eda112b41d6e5130");
 }
