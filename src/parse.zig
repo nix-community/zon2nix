@@ -100,8 +100,8 @@ test parse {
 
     var deps = StringHashMap(Dependency).init(alloc);
     const basic = try fs.cwd().openFile("fixtures/basic.zon", .{});
+    defer basic.close();
     try parse(alloc, &deps, basic);
-    basic.close();
 
     try testing.expectEqual(deps.count(), 5);
     try testing.expectEqualStrings(deps.get("122048992ca58a78318b6eba4f65c692564be5af3b30fbef50cd4abeda981b2e7fa5").?.url, "https://github.com/ziglibs/known-folders/archive/fa75e1bc672952efa0cf06160bbd942b47f6d59b.tar.gz");
