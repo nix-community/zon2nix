@@ -7,9 +7,14 @@
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    zig-overlay = {
+      url = "github:mitchellh/zig-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ flake-parts, ... }:
+  outputs =
+    inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "aarch64-darwin"
@@ -23,35 +28,44 @@
         "x86_64-linux"
       ];
 
-      perSystem = { lib, pkgs, ... }:
+      perSystem =
+        {
+          system,
+          lib,
+          pkgs,
+          ...
+        }:
         let
-          inherit (lib)
-            getExe
-            ;
           inherit (pkgs)
-            nix
-            stdenv
-            zig
+            callPackage
+            zigpkgs
+            zig_0_13
             ;
         in
         {
-          packages.default = stdenv.mkDerivation {
-            pname = "zon2nix";
-            version = "0.1.2";
-
-            src = ./.;
-
-            nativeBuildInputs = [
-              zig.hook
+          _module.args.pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = [
+              inputs.zig-overlay.overlays.default
             ];
+            config = { };
+          };
 
-            zigBuildFlags = [
-              "-Dnix=${getExe nix}"
-            ];
+          packages = {
+            default = callPackage ./nix/package.nix {
+              zig = zigpkgs.master.overrideAttrs (
+                f: p: {
+                  inherit (zig_0_13) meta;
 
-            zigCheckFlags = [
-              "-Dnix=${getExe nix}"
-            ];
+                  passthru.hook = callPackage "${inputs.nixpkgs}/pkgs/development/compilers/zig/hook.nix" {
+                    zig = f.finalPackage;
+                  };
+                }
+              );
+            };
+            "default-0.13" = callPackage ./nix/package.nix {
+              zig = zig_0_13;
+            };
           };
         };
     };
