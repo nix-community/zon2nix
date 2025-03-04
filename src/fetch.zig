@@ -37,6 +37,7 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
 
             var child = try alloc.create(ChildProcess);
             const ref = try fmt.allocPrint(alloc, "tarball+{s}", .{dep.url});
+            log.debug("running \"nix flake prefetch --json --extra-experimental-features 'flakes nix-command' {s}\"", .{ref});
             const argv = &[_][]const u8{ nix, "flake", "prefetch", "--json", "--extra-experimental-features", "flakes nix-command", ref };
             child.* = ChildProcess.init(argv, alloc);
             child.stdin_behavior = .Ignore;
@@ -52,7 +53,14 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
             const child = worker.child;
             const dep = worker.dep;
 
-            var reader = json.reader(alloc, child.stdout.?.reader());
+            const buf = try child.stdout.?.readToEndAlloc(alloc, std.math.maxInt(usize));
+            defer alloc.free(buf);
+
+            log.debug("nix prefetch for \"{s}\" returned: {s}", .{ dep.url, buf });
+
+            var fbs = std.io.fixedBufferStream(buf);
+
+            var reader = json.reader(alloc, fbs.reader());
             const res = try json.parseFromTokenSourceLeaky(Prefetch, alloc, &reader, .{ .ignore_unknown_fields = true });
 
             switch (try child.wait()) {
@@ -71,6 +79,7 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
             }
 
             assert(res.hash.len != 0);
+            log.debug("hash for \"{s}\" is {s}", .{ dep.url, res.hash });
 
             dep.nix_hash = res.hash;
             dep.done = true;
