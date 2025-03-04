@@ -63,7 +63,7 @@
                 }
               );
             };
-            "default-0.13" = callPackage ./nix/package.nix {
+            default_0_13 = callPackage ./nix/package.nix {
               zig = zig_0_13;
             };
           };
