@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-latest, ubuntu-latest, macos-13, ubuntu-24.04-arm]
 
     steps:
       - name: Checkout
@@ -23,8 +23,16 @@ jobs:
         with:
           version: 0.13.0
 
+      - uses: DeterminateSystems/nix-installer-action@main
+
       - name: Run tests
         run: zig build test
+
+      - name: Run executable on zls
+        run: |
+          git clone https://github.com/zigtools/zls
+          nix run .#default_0_13 -- zls
+          nix run . -- zls
 
   format:
     name: format
