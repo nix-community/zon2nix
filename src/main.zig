@@ -28,12 +28,13 @@ pub fn main() !void {
     defer arena.deinit();
     const alloc = arena.allocator();
 
+    var meta = StringHashMap([]const u8).init(alloc);
     var deps = StringHashMap(Dependency).init(alloc);
-    try parse(alloc, &deps, file);
+    try parse(alloc, &meta, &deps, file);
     try fetch(alloc, &deps);
 
     var out = io.bufferedWriter(io.getStdOut().writer());
-    try write(alloc, out.writer(), deps);
+    try write(alloc, out.writer(), meta, deps);
     try out.flush();
 }
 

@@ -79,7 +79,8 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
             };
             defer file.close();
 
-            try parse(alloc, deps, file);
+            var meta = StringHashMap([]const u8).init(alloc);
+            try parse(alloc, &meta, deps, file);
             if (deps.count() > len_before) {
                 done = false;
             }
