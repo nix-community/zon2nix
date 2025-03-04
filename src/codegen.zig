@@ -1,4 +1,5 @@
 const std = @import("std");
+const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
 const StringHashMap = std.StringHashMap;
 const mem = std.mem;
@@ -28,6 +29,7 @@ pub fn write(alloc: Allocator, out: anytype, deps: StringHashMap(Dependency)) !v
     for (entries) |entry| {
         const key = entry.key_ptr.*;
         const dep = entry.value_ptr.*;
+        assert(dep.nix_hash.len != 0);
         try out.print(
             \\  {{
             \\    name = "{s}";

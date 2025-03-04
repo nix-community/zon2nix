@@ -1,4 +1,5 @@
 const std = @import("std");
+const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
 const Ast = std.zig.Ast;
 const File = std.fs.File;
@@ -53,6 +54,7 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
                     has_url = true;
                 } else if (mem.eql(u8, name, "hash")) {
                     hash = try parseString(alloc, ast, dep_field_idx);
+                    assert(hash.len != 0);
                     has_hash = true;
                 }
             }
