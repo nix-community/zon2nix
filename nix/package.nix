@@ -24,7 +24,10 @@ stdenv.mkDerivation {
 
   postInstall = lib.optional stdenv.hostPlatform.isLinux ''
     patchelf --set-interpreter ${stdenv.cc.libc}/lib/ld-linux-${
-      if stdenv.hostPlatform.isx86_64 then "x86-64" else stdenv.hostPlatform.parsed.cpu.name
-    }.so.1 $out/bin/zon2nix
+      if stdenv.hostPlatform.isx86_64 then
+        "x86-64.so.2"
+      else
+        "${stdenv.hostPlatform.parsed.cpu.name}.so.1"
+    } $out/bin/zon2nix
   '';
 }
