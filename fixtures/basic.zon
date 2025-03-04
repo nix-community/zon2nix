@@ -25,5 +25,11 @@
             .url = "git+https://github.com/rockorager/libvaxis#1fd920a7aea1bb040c7c028f4bbf0af2ea58e1d1",
             .hash = "1220feaa655e14cbb4baf59fe746f09a17fc6949be46ad64dd5044982f4fc1bb57c7",
         },
+        // from a problem during https://github.com/nix-community/zon2nix/pull/24
+        .@"zig-tracy" = .{
+            .url = "git+https://github.com/vancluever/zig-tracy?ref=fix-callstack#6e123ee26032e49a1a0039524ddf7970692931d9",
+            .hash = "122094fc39764bd527269d3721f52fc3b8cbb72bc4cdbd3345cbc2cd941936f3d185",
+            .lazy = true,
+        },
     },
 }
