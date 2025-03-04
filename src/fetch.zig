@@ -1,4 +1,5 @@
 const std = @import("std");
+const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const ChildProcess = std.process.Child;
@@ -68,6 +69,8 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
                     return error.NixError;
                 },
             }
+
+            assert(res.hash.len != 0);
 
             dep.nix_hash = res.hash;
             dep.done = true;
