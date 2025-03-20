@@ -3,6 +3,8 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const linkage = b.option(std.builtin.LinkMode, "linkage", "Link mode");
+
     const nix = b.option([]const u8, "nix", "Path to the Nix executable") orelse "nix";
 
     const options = b.addOptions();
@@ -13,6 +15,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        .linkage = linkage,
     });
     exe.root_module.addOptions("options", options);
     b.installArtifact(exe);
@@ -30,6 +33,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    unit_tests.linkage = linkage;
     unit_tests.root_module.addOptions("options", options);
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test", "Run unit tests");

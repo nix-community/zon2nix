@@ -16,10 +16,12 @@ stdenv.mkDerivation {
 
   zigBuildFlags = [
     "-Dnix=${lib.getExe nix}"
+    "-Dlinkage=${if stdenv.hostPlatform.isStatic then "static" else "dynamic"}"
   ];
 
   zigCheckFlags = [
     "-Dnix=${lib.getExe nix}"
+    "-Dlinkage=${if stdenv.hostPlatform.isStatic then "static" else "dynamic"}"
   ];
 
   postInstall = lib.optional stdenv.hostPlatform.isLinux ''
