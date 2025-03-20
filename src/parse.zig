@@ -1,3 +1,4 @@
+const builtin = @import("builtin");
 const std = @import("std");
 const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
@@ -10,6 +11,12 @@ const string_literal = std.zig.string_literal;
 
 const Dependency = @import("Dependency.zig");
 
+const zig_legacy_version = builtin.zig_version.order(.{
+    .major = 0,
+    .minor = 14,
+    .patch = 0,
+}) == .lt;
+
 pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !void {
     const content = try alloc.allocSentinel(u8, try file.getEndPos(), 0);
     _ = try file.reader().readAll(content);
@@ -17,7 +24,7 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
     const ast = try Ast.parse(alloc, content, .zon);
 
     var root_buf: [2]Index = undefined;
-    const root_init = ast.fullStructInit(&root_buf, ast.nodes.items(.data)[0].lhs) orelse {
+    const root_init = ast.fullStructInit(&root_buf, @field(ast.nodes.items(.data)[0], if (zig_legacy_version) "lhs" else "node")) orelse {
         return error.ParseError;
     };
 
@@ -86,7 +93,7 @@ fn parseFieldName(alloc: Allocator, ast: Ast, idx: Index) ![]const u8 {
 }
 
 fn parseString(alloc: Allocator, ast: Ast, idx: Index) ![]const u8 {
-    return string_literal.parseAlloc(alloc, ast.tokenSlice(ast.nodes.items(.main_token)[idx]));
+    return string_literal.parseAlloc(alloc, ast.tokenSlice(ast.nodes.items(.main_token)[if (zig_legacy_version) idx else @intFromEnum(idx)]));
 }
 
 test parse {
