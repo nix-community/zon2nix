@@ -4,6 +4,7 @@ const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const ChildProcess = std.process.Child;
 const StringHashMap = std.StringHashMap;
+const mem = std.mem;
 const fmt = std.fmt;
 const fs = std.fs;
 const json = std.json;
@@ -37,11 +38,18 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
 
             var child = try alloc.create(ChildProcess);
             const ref = ref: {
-                if (dep.rev.len == 0) {
-                    break :ref try fmt.allocPrint(alloc, "tarball+{s}", .{dep.url});
-                } else {
-                    break :ref try fmt.allocPrint(alloc, "git+{s}?rev={s}", .{ dep.url, dep.rev });
-                }
+                const base = base: {
+                    if (dep.rev.len == 0) {
+                        break :base try fmt.allocPrint(alloc, "tarball+{s}", .{dep.url});
+                    } else {
+                        break :base try fmt.allocPrint(alloc, "git+{s}?rev={s}", .{ dep.url, dep.rev });
+                    }
+                };
+                const revi = mem.lastIndexOf(u8, base, "rev=") orelse break :ref base;
+                const refi = mem.lastIndexOf(u8, base, "ref=") orelse break :ref base;
+
+                const i = @min(revi, refi);
+                break :ref base[0..(i - 1)];
             };
             log.debug("running \"nix flake prefetch --json --extra-experimental-features 'flakes nix-command' {s}\"", .{ref});
             const argv = &[_][]const u8{ nix, "flake", "prefetch", "--json", "--extra-experimental-features", "flakes nix-command", ref };
