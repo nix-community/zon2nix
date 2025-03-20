@@ -11,9 +11,13 @@ const string_literal = std.zig.string_literal;
 
 const Dependency = @import("Dependency.zig");
 
-const zig_legacy_version = builtin.zig_version.order(.{
+const zig_legacy_version = (std.SemanticVersion{
+    .major = builtin.zig_version.major,
+    .minor = builtin.zig_version.minor,
+    .patch = builtin.zig_version.patch,
+}).order(.{
     .major = 0,
-    .minor = 14,
+    .minor = 15,
     .patch = 0,
 }) == .lt;
 
