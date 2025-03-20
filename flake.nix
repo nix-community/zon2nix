@@ -40,6 +40,7 @@
             callPackage
             zigpkgs
             zig_0_13
+            zig_0_14
             ;
         in
         {
@@ -55,13 +56,16 @@
             default = callPackage ./nix/package.nix {
               zig = zigpkgs.master.overrideAttrs (
                 f: p: {
-                  inherit (zig_0_13) meta;
+                  inherit (zig_0_14) meta;
 
                   passthru.hook = callPackage "${inputs.nixpkgs}/pkgs/development/compilers/zig/hook.nix" {
                     zig = f.finalPackage;
                   };
                 }
               );
+            };
+            default_0_14 = callPackage ./nix/package.nix {
+              zig = zig_0_14;
             };
             default_0_13 = callPackage ./nix/package.nix {
               zig = zig_0_13;

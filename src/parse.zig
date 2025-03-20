@@ -1,3 +1,4 @@
+const builtin = @import("builtin");
 const std = @import("std");
 const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
@@ -10,6 +11,16 @@ const string_literal = std.zig.string_literal;
 
 const Dependency = @import("Dependency.zig");
 
+const zig_legacy_version = (std.SemanticVersion{
+    .major = builtin.zig_version.major,
+    .minor = builtin.zig_version.minor,
+    .patch = builtin.zig_version.patch,
+}).order(.{
+    .major = 0,
+    .minor = 15,
+    .patch = 0,
+}) == .lt;
+
 pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !void {
     const content = try alloc.allocSentinel(u8, try file.getEndPos(), 0);
     _ = try file.reader().readAll(content);
@@ -17,7 +28,7 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
     const ast = try Ast.parse(alloc, content, .zon);
 
     var root_buf: [2]Index = undefined;
-    const root_init = ast.fullStructInit(&root_buf, ast.nodes.items(.data)[0].lhs) orelse {
+    const root_init = ast.fullStructInit(&root_buf, @field(ast.nodes.items(.data)[0], if (zig_legacy_version) "lhs" else "node")) orelse {
         return error.ParseError;
     };
 
@@ -34,13 +45,13 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
         for (deps_init.ast.fields) |dep_idx| {
             var dep: Dependency = .{
                 .url = undefined,
-                .rev = undefined,
-                .nix_hash = undefined,
+                .rev = null,
+                .nix_hash = null,
                 .done = false,
             };
-            var hash: []const u8 = undefined;
-            var has_url = false;
-            var has_hash = false;
+
+            var hash: ?[]const u8 = null;
+            var url: ?[]const u8 = null;
 
             var dep_buf: [2]Index = undefined;
             const dep_init = ast.fullStructInit(&dep_buf, dep_idx) orelse {
@@ -52,27 +63,25 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
                 const name = try parseFieldName(alloc, ast, dep_field_idx);
 
                 if (mem.eql(u8, name, "url")) {
-                    const url = try parseString(alloc, ast, dep_field_idx);
-                    if (std.mem.startsWith(u8, url, "https://")) {
-                        dep.url = url;
-                    } else if (std.mem.startsWith(u8, url, "git+https://")) {
-                        const url_end = std.mem.indexOf(u8, url[0..], "#").?;
-                        const raw_url = url[4..url_end];
+                    const parsed_url = try parseString(alloc, ast, dep_field_idx);
+                    if (std.mem.startsWith(u8, parsed_url, "https://")) {
+                        url = parsed_url;
+                    } else if (std.mem.startsWith(u8, parsed_url, "git+https://")) {
+                        const url_end = std.mem.indexOf(u8, parsed_url[0..], "#").?;
+                        const raw_url = parsed_url[4..url_end];
                         const hash_start = url_end + 1; // +1 to skip the '#'
-                        const git_hash = url[hash_start..];
-                        dep.url = raw_url;
+                        const git_hash = parsed_url[hash_start..];
+                        url = raw_url;
                         dep.rev = git_hash;
                     }
-                    has_url = true;
                 } else if (mem.eql(u8, name, "hash")) {
                     hash = try parseString(alloc, ast, dep_field_idx);
-                    assert(hash.len != 0);
-                    has_hash = true;
                 }
             }
 
-            if (has_url and has_hash) {
-                _ = try deps.getOrPutValue(hash, dep);
+            if (url != null and hash != null) {
+                dep.url = url.?;
+                _ = try deps.getOrPutValue(hash.?, dep);
             } else {
                 return error.parseError;
             }
@@ -86,7 +95,7 @@ fn parseFieldName(alloc: Allocator, ast: Ast, idx: Index) ![]const u8 {
 }
 
 fn parseString(alloc: Allocator, ast: Ast, idx: Index) ![]const u8 {
-    return string_literal.parseAlloc(alloc, ast.tokenSlice(ast.nodes.items(.main_token)[idx]));
+    return string_literal.parseAlloc(alloc, ast.tokenSlice(ast.nodes.items(.main_token)[if (zig_legacy_version) idx else @intFromEnum(idx)]));
 }
 
 test parse {
@@ -109,11 +118,11 @@ test parse {
     try testing.expectEqualStrings(deps.get("1220363c7e27b2d3f39de6ff6e90f9537a0634199860fea237a55ddb1e1717f5d6a5").?.url, "https://gist.github.com/antlilja/8372900fcc09e38d7b0b6bbaddad3904/archive/6c3321e0969ff2463f8335da5601986cf2108690.tar.gz");
     const ziggy = deps.get("1220115ff095a3c970cc90fce115294ba67d6fbc4927472dc856abc51e2a1a9364d7").?;
     try testing.expectEqualStrings(ziggy.url, "https://github.com/kristoff-it/ziggy");
-    try testing.expectEqualStrings(ziggy.rev, "c66f47bc632c66668d61fa06eda112b41d6e5130");
+    try testing.expectEqualStrings(ziggy.rev.?, "c66f47bc632c66668d61fa06eda112b41d6e5130");
     const vaxis = deps.get("1220feaa655e14cbb4baf59fe746f09a17fc6949be46ad64dd5044982f4fc1bb57c7").?;
     try testing.expectEqualStrings(vaxis.url, "https://github.com/rockorager/libvaxis");
-    try testing.expectEqualStrings(vaxis.rev, "1fd920a7aea1bb040c7c028f4bbf0af2ea58e1d1");
+    try testing.expectEqualStrings(vaxis.rev.?, "1fd920a7aea1bb040c7c028f4bbf0af2ea58e1d1");
     const zig_tracy = deps.get("122094fc39764bd527269d3721f52fc3b8cbb72bc4cdbd3345cbc2cd941936f3d185").?;
     try testing.expectEqualStrings(zig_tracy.url, "https://github.com/vancluever/zig-tracy?ref=fix-callstack");
-    try testing.expectEqualStrings(zig_tracy.rev, "6e123ee26032e49a1a0039524ddf7970692931d9");
+    try testing.expectEqualStrings(zig_tracy.rev.?, "6e123ee26032e49a1a0039524ddf7970692931d9");
 }

@@ -29,8 +29,8 @@ pub fn write(alloc: Allocator, out: anytype, deps: StringHashMap(Dependency)) !v
     for (entries) |entry| {
         const key = entry.key_ptr.*;
         const dep = entry.value_ptr.*;
-        assert(dep.nix_hash.len != 0);
-        if (dep.rev.len != 0) {
+        const nix_hash = dep.nix_hash orelse return error.MissingNixHash;
+        if (dep.rev) |rev| {
             try out.print(
                 \\  {{
                 \\    name = "{s}";
@@ -41,7 +41,7 @@ pub fn write(alloc: Allocator, out: anytype, deps: StringHashMap(Dependency)) !v
                 \\    }};
                 \\  }}
                 \\
-            , .{ key, dep.url, dep.rev, dep.nix_hash });
+            , .{ key, dep.url, rev, nix_hash });
         } else {
             try out.print(
                 \\  {{
@@ -52,7 +52,7 @@ pub fn write(alloc: Allocator, out: anytype, deps: StringHashMap(Dependency)) !v
                 \\    }};
                 \\  }}
                 \\
-            , .{ key, dep.url, dep.nix_hash });
+            , .{ key, dep.url, nix_hash });
         }
     }
 

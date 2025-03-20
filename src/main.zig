@@ -24,7 +24,7 @@ pub fn main() !void {
         dir.openFile("build.zig.zon", .{});
     defer file.close();
 
-    var arena = heap.ArenaAllocator.init(heap.raw_c_allocator);
+    var arena = heap.ArenaAllocator.init(heap.page_allocator);
     defer arena.deinit();
     const alloc = arena.allocator();
 
