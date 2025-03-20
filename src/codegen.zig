@@ -19,7 +19,10 @@ pub fn write(alloc: Allocator, out: anytype, deps: StringHashMap(Dependency)) !v
     );
 
     const len = deps.count();
+
     var entries = try alloc.alloc(Entry, len);
+    defer alloc.free(entries);
+
     var iter = deps.iterator();
     for (0..len) |i| {
         entries[i] = iter.next().?;

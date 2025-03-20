@@ -27,6 +27,7 @@ const Worker = struct {
 
 pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
     var workers = try ArrayList(Worker).initCapacity(alloc, deps.count());
+    defer workers.deinit();
     var done = false;
 
     while (!done) {
@@ -45,12 +46,17 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
                         break :base try fmt.allocPrint(alloc, "tarball+{s}", .{dep.url});
                     }
                 };
+
                 const revi = mem.lastIndexOf(u8, base, "rev=") orelse break :ref base;
                 const refi = mem.lastIndexOf(u8, base, "ref=") orelse break :ref base;
 
+                defer alloc.free(base);
+
                 const i = @min(revi, refi);
-                break :ref base[0..(i - 1)];
+                break :ref try alloc.dupe(u8, base[0..(i - 1)]);
             };
+            defer alloc.free(ref);
+
             log.debug("running \"nix flake prefetch --json --extra-experimental-features 'flakes nix-command' {s}\"", .{ref});
             const argv = &[_][]const u8{ nix, "flake", "prefetch", "--json", "--extra-experimental-features", "flakes nix-command", ref };
             child.* = ChildProcess.init(argv, alloc);
@@ -67,15 +73,18 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
             const child = worker.child;
             const dep = worker.dep;
 
+            defer alloc.destroy(child);
+
             const buf = try child.stdout.?.readToEndAlloc(alloc, std.math.maxInt(usize));
             defer alloc.free(buf);
 
             log.debug("nix prefetch for \"{s}\" returned: {s}", .{ dep.url, buf });
 
-            var fbs = std.io.fixedBufferStream(buf);
-
-            var reader = json.reader(alloc, fbs.reader());
-            const res = try json.parseFromTokenSourceLeaky(Prefetch, alloc, &reader, .{ .ignore_unknown_fields = true });
+            const res = try json.parseFromSlice(Prefetch, alloc, buf, .{
+                .ignore_unknown_fields = true,
+                .allocate = .alloc_always,
+            });
+            defer res.deinit();
 
             switch (try child.wait()) {
                 .Exited => |code| if (code != 0) {
@@ -92,13 +101,15 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
                 },
             }
 
-            assert(res.hash.len != 0);
-            log.debug("hash for \"{s}\" is {s}", .{ dep.url, res.hash });
+            assert(res.value.hash.len != 0);
+            log.debug("hash for \"{s}\" is {s}", .{ dep.url, res.value.hash });
 
-            dep.nix_hash = res.hash;
+            dep.nix_hash = try alloc.dupe(u8, res.value.hash);
             dep.done = true;
 
-            const path = try fmt.allocPrint(alloc, "{s}" ++ fs.path.sep_str ++ "build.zig.zon", .{res.storePath});
+            const path = try fmt.allocPrint(alloc, "{s}" ++ fs.path.sep_str ++ "build.zig.zon", .{res.value.storePath});
+            defer alloc.free(path);
+
             const file = fs.openFileAbsolute(path, .{}) catch |err| switch (err) {
                 error.FileNotFound => continue,
                 else => return err,

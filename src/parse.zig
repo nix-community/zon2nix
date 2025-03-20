@@ -23,9 +23,12 @@ const zig_legacy_version = (std.SemanticVersion{
 
 pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !void {
     const content = try alloc.allocSentinel(u8, try file.getEndPos(), 0);
+    defer alloc.free(content);
+
     _ = try file.reader().readAll(content);
 
-    const ast = try Ast.parse(alloc, content, .zon);
+    var ast = try Ast.parse(alloc, content, .zon);
+    defer ast.deinit(alloc);
 
     var root_buf: [2]Index = undefined;
     const root_init = ast.fullStructInit(&root_buf, @field(ast.nodes.items(.data)[0], if (zig_legacy_version) "lhs" else "node")) orelse {
@@ -33,7 +36,10 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
     };
 
     for (root_init.ast.fields) |field_idx| {
-        if (!mem.eql(u8, try parseFieldName(alloc, ast, field_idx), "dependencies")) {
+        const field_name = try parseFieldName(alloc, ast, field_idx);
+        defer alloc.free(field_name);
+
+        if (!mem.eql(u8, field_name, "dependencies")) {
             continue;
         }
 
@@ -61,18 +67,21 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
 
             for (dep_init.ast.fields) |dep_field_idx| {
                 const name = try parseFieldName(alloc, ast, dep_field_idx);
+                defer alloc.free(name);
 
                 if (mem.eql(u8, name, "url")) {
                     const parsed_url = try parseString(alloc, ast, dep_field_idx);
                     if (std.mem.startsWith(u8, parsed_url, "https://")) {
                         url = parsed_url;
                     } else if (std.mem.startsWith(u8, parsed_url, "git+https://")) {
+                        defer alloc.free(parsed_url);
+
                         const url_end = std.mem.indexOf(u8, parsed_url[0..], "#").?;
                         const raw_url = parsed_url[4..url_end];
                         const hash_start = url_end + 1; // +1 to skip the '#'
                         const git_hash = parsed_url[hash_start..];
-                        url = raw_url;
-                        dep.rev = git_hash;
+                        url = try alloc.dupe(u8, raw_url);
+                        dep.rev = try alloc.dupe(u8, git_hash);
                     }
                 } else if (mem.eql(u8, name, "hash")) {
                     hash = try parseString(alloc, ast, dep_field_idx);
@@ -91,7 +100,7 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
 
 fn parseFieldName(alloc: Allocator, ast: Ast, idx: Index) ![]const u8 {
     const name = ast.tokenSlice(ast.firstToken(idx) - 2);
-    return if (name[0] == '@') string_literal.parseAlloc(alloc, name[1..]) else name;
+    return if (name[0] == '@') string_literal.parseAlloc(alloc, name[1..]) else alloc.dupe(u8, name);
 }
 
 fn parseString(alloc: Allocator, ast: Ast, idx: Index) ![]const u8 {
