@@ -41,7 +41,11 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
             const ref = ref: {
                 const base = base: {
                     if (dep.rev) |rev| {
-                        break :base try fmt.allocPrint(alloc, "git+{s}?rev={s}", .{ dep.url, rev });
+                        if (rev.len == 40)
+                            // TODO: Differentiate between 40-character tags and commit hashes
+                            break :base try fmt.allocPrint(alloc, "git+{s}?rev={s}", .{ dep.url, rev })
+                        else
+                            break :base try fmt.allocPrint(alloc, "git+{s}?ref=refs/tags/{s}", .{ dep.url, rev });
                     } else {
                         break :base try fmt.allocPrint(alloc, "tarball+{s}", .{dep.url});
                     }
