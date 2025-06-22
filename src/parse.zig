@@ -58,6 +58,7 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
 
             var hash: ?[]const u8 = null;
             var url: ?[]const u8 = null;
+            var has_path: bool = false;
 
             var dep_buf: [2]Index = undefined;
             const dep_init = ast.fullStructInit(&dep_buf, dep_idx) orelse {
@@ -85,6 +86,8 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
                     }
                 } else if (mem.eql(u8, name, "hash")) {
                     hash = try parseString(alloc, ast, dep_field_idx);
+                } else if (mem.eql(u8, name, "path")) {
+                    has_path = true;
                 }
             }
 
@@ -92,7 +95,7 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
                 dep.url = url.?;
                 _ = try deps.getOrPutValue(hash.?, dep);
             } else {
-                return error.parseError;
+                if (!has_path) return error.InvalidDependency;
             }
         }
     }
