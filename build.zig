@@ -6,9 +6,13 @@ pub fn build(b: *std.Build) void {
     const linkage = b.option(std.builtin.LinkMode, "linkage", "Link mode");
 
     const nix = b.option([]const u8, "nix", "Path to the Nix executable") orelse "nix";
+    const no_nix = b.option(bool, "no-nix", "Use narser instead of Nix for fetching") orelse false;
+
+    if (no_nix and target.result.os.tag == .windows) @panic("Narser cannot run on Windows");
 
     const options = b.addOptions();
     options.addOption([]const u8, "nix", nix);
+    options.addOption(bool, "no_nix", no_nix);
 
     const exe = b.addExecutable(.{
         .name = "zon2nix",

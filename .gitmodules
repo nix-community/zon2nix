@@ -1,0 +1,7 @@
+[submodule "src/narser"]
+	path = src/narser
+	url = https://github.com/myclevorname/narser
+[submodule "src/zig"]
+	path = src/zig
+	url = https://github.com/ziglang/zig
+	branch = origin/0.14.x

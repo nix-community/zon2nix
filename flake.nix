@@ -6,6 +6,7 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
+    self.submodules = true;
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     zig-overlay = {
       url = "github:mitchellh/zig-overlay";
@@ -69,6 +70,26 @@
             };
             default_0_13 = callPackage ./nix/package.nix {
               zig = zig_0_13;
+            };
+            default_narser = callPackage ./nix/package.nix {
+              no-nix = true;
+              zig = zigpkgs.master.overrideAttrs (
+                f: p: {
+                  inherit (zig_0_14) meta;
+
+                  passthru.hook = callPackage "${inputs.nixpkgs}/pkgs/development/compilers/zig/hook.nix" {
+                    zig = f.finalPackage;
+                  };
+                }
+              );
+            };
+            default_0_14_narser = callPackage ./nix/package.nix {
+              zig = zig_0_14;
+              no-nix = true;
+            };
+            default_0_13_narser = callPackage ./nix/package.nix {
+              zig = zig_0_13;
+              no-nix = true;
             };
           };
         };

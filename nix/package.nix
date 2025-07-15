@@ -3,6 +3,7 @@
   stdenv,
   zig,
   nix,
+  no-nix ? false,
 }:
 stdenv.mkDerivation {
   pname = "zon2nix";
@@ -15,12 +16,12 @@ stdenv.mkDerivation {
   ];
 
   zigBuildFlags = [
-    "-Dnix=${lib.getExe nix}"
+    (if no-nix then "-Dno-nix" else "-Dnix=${lib.getExe nix}")
     "-Dlinkage=${if stdenv.hostPlatform.isStatic then "static" else "dynamic"}"
   ];
 
   zigCheckFlags = [
-    "-Dnix=${lib.getExe nix}"
+    (if no-nix then "-Dno-nix" else "-Dnix=${lib.getExe nix}")
     "-Dlinkage=${if stdenv.hostPlatform.isStatic then "static" else "dynamic"}"
   ];
 }
