@@ -314,7 +314,7 @@ const Resource = struct {
     want_oid: git.Oid,
 };
 
-/// Copied from Zig
+/// Modified from `src/Package/Fetch.zig` under the MIT License
 fn unpackGitPack(alloc: std.mem.Allocator, out_dir: fs.Dir, resource: *Resource) !void {
     const object_format: git.Oid.Format = resource.want_oid;
 

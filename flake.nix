@@ -68,9 +68,6 @@
             default_0_14 = callPackage ./nix/package.nix {
               zig = zig_0_14;
             };
-            default_0_13 = callPackage ./nix/package.nix {
-              zig = zig_0_13;
-            };
             default_narser = callPackage ./nix/package.nix {
               no-nix = true;
               zig = zigpkgs.master.overrideAttrs (
@@ -85,10 +82,6 @@
             };
             default_0_14_narser = callPackage ./nix/package.nix {
               zig = zig_0_14;
-              no-nix = true;
-            };
-            default_0_13_narser = callPackage ./nix/package.nix {
-              zig = zig_0_13;
               no-nix = true;
             };
           };

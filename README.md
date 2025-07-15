@@ -75,3 +75,7 @@ linkFarm "zig-packages" [
   }
 ]
 ```
+
+## Attribution
+
+[Narser](https://github.com/myclevorname/narser) and [Zig](https://github.com/ziglang/zig) are provided under the MIT license.
