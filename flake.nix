@@ -42,7 +42,7 @@
             zig_0_13
             zig_0_14
             ;
-          zig_0_16 = zigpkgs.master-2025-11-13;
+          zig_0_16 = zigpkgs.master-2026-02-03;
         in
         {
           _module.args.pkgs = import inputs.nixpkgs {

@@ -3,7 +3,8 @@ const std = @import("std");
 const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
 const Ast = std.zig.Ast;
-const File = std.fs.File;
+const File = std.Io.File;
+const Io = std.Io;
 const Index = std.zig.Ast.Node.Index;
 const StringHashMap = std.StringHashMap;
 const mem = std.mem;
@@ -21,12 +22,10 @@ const zig_legacy_version = (std.SemanticVersion{
     .patch = 0,
 }) == .lt;
 
-pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !void {
-    const content = try alloc.allocSentinel(u8, try file.getEndPos(), 0);
+pub fn parse(alloc: Allocator, io: Io, deps: *StringHashMap(Dependency), file: File) !void {
+    const content = try alloc.allocSentinel(u8, try file.length(io), 0);
     defer alloc.free(content);
 
-    var threaded: std.Io.Threaded = .init_single_threaded;
-    const io = threaded.io();
     var buffer: [4096]u8 = undefined;
 
     var reader = file.reader(io, &buffer);
@@ -76,11 +75,10 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
 
                 if (mem.eql(u8, name, "url")) {
                     const parsed_url = try parseString(alloc, ast, dep_field_idx);
+                    defer alloc.free(parsed_url);
                     if (std.mem.startsWith(u8, parsed_url, "https://")) {
                         url = parsed_url;
                     } else if (std.mem.startsWith(u8, parsed_url, "git+https://")) {
-                        defer alloc.free(parsed_url);
-
                         const url_end = std.mem.indexOf(u8, parsed_url[0..], "#").?;
                         const raw_url = parsed_url[4..url_end];
                         const hash_start = url_end + 1; // +1 to skip the '#'
@@ -127,18 +125,18 @@ fn parseString(alloc: Allocator, ast: Ast, idx: Index) ![]const u8 {
 }
 
 test parse {
-    const fs = std.fs;
     const heap = std.heap;
     const testing = std.testing;
+    const io = testing.io;
 
     var arena = heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const alloc = arena.allocator();
 
     var deps = StringHashMap(Dependency).init(alloc);
-    const basic = try fs.cwd().openFile("fixtures/basic.zon", .{});
-    defer basic.close();
-    try parse(alloc, &deps, basic);
+    const basic = try Io.Dir.cwd().openFile(io, "fixtures/basic.zon", .{});
+    defer basic.close(io);
+    try parse(alloc, io, &deps, basic);
 
     try testing.expectEqual(deps.count(), 6);
     try testing.expectEqualStrings(deps.get("122048992ca58a78318b6eba4f65c692564be5af3b30fbef50cd4abeda981b2e7fa5").?.url, "https://github.com/ziglibs/known-folders/archive/fa75e1bc672952efa0cf06160bbd942b47f6d59b.tar.gz");
