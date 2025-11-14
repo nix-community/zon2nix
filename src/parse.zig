@@ -25,7 +25,12 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
     const content = try alloc.allocSentinel(u8, try file.getEndPos(), 0);
     defer alloc.free(content);
 
-    _ = try file.reader().readAll(content);
+    var threaded: std.Io.Threaded = .init_single_threaded;
+    const io = threaded.io();
+    var buffer: [4096]u8 = undefined;
+
+    var reader = file.reader(io, &buffer);
+    try reader.interface.readSliceAll(content);
 
     var ast = try Ast.parse(alloc, content, .zon);
     defer ast.deinit(alloc);

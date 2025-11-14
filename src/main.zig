@@ -3,7 +3,7 @@ const std = @import("std");
 const StringHashMap = std.StringHashMap;
 const fs = std.fs;
 const heap = std.heap;
-const io = std.io;
+const Io = std.Io;
 const process = std.process;
 
 const Dependency = @import("Dependency.zig");
@@ -62,9 +62,12 @@ pub fn main() !void {
     try parse(gpa, &deps, file);
     try fetch(gpa, &deps);
 
-    var out = io.bufferedWriter(io.getStdOut().writer());
-    try write(gpa, out.writer(), deps);
-    try out.flush();
+    var buffer: [4096]u8 = undefined;
+    var stdoutWriter = fs.File.stdout().writer(&buffer);
+    const stdout = &stdoutWriter.interface;
+
+    try write(gpa, stdout, deps);
+    try stdout.flush();
 }
 
 comptime {
