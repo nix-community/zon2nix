@@ -94,8 +94,22 @@ pub fn parse(alloc: Allocator, deps: *StringHashMap(Dependency), file: File) !vo
             }
 
             if (url != null and hash != null) {
-                dep.url = url.?;
-                _ = try deps.getOrPutValue(hash.?, dep);
+                if (deps.get(hash.?)) |containedDep| {
+                    // If this dependency is already known, we don't need to add it again and free new memory right away.
+                    defer {
+                        alloc.free(hash.?);
+                        alloc.free(url.?);
+                    }
+
+                    // For safety, we check if the previously known dependency has the same url too.
+                    if (!std.mem.eql(u8, url.?, containedDep.url)) {
+                        std.log.err("url mismatch for hash {s}, new url: '{s}', contained url: '{s}'", .{ hash.?, url.?, containedDep.url });
+                        return error.parseError;
+                    }
+                } else {
+                    dep.url = url.?;
+                    try deps.put(hash.?, dep);
+                }
             } else {
                 return error.parseError;
             }
