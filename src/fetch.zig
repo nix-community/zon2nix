@@ -49,23 +49,7 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
             }
 
             var child = try alloc.create(ChildProcess);
-            const ref = ref: {
-                const base = base: {
-                    if (dep.rev) |rev| {
-                        break :base try fmt.allocPrint(alloc, "git+{s}?rev={s}", .{ dep.url, rev });
-                    } else {
-                        break :base try fmt.allocPrint(alloc, "tarball+{s}", .{dep.url});
-                    }
-                };
-
-                const revi = mem.lastIndexOf(u8, base, "rev=") orelse break :ref base;
-                const refi = mem.lastIndexOf(u8, base, "ref=") orelse break :ref base;
-
-                defer alloc.free(base);
-
-                const i = @min(revi, refi);
-                break :ref try alloc.dupe(u8, base[0..(i - 1)]);
-            };
+            const ref = try dep.flakePrefetchRef(alloc);
             defer alloc.free(ref);
 
             log.debug("running \"nix flake prefetch --json --extra-experimental-features 'flakes nix-command' {s}\"", .{ref});
