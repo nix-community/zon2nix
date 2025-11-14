@@ -21,7 +21,18 @@ const Prefetch = struct {
 
 const Worker = struct {
     child: *ChildProcess,
-    dep: *Dependency,
+    hash: []const u8,
+
+    /// Takes ownership of `child` and duplicates `hash` internally.
+    pub fn init(alloc: std.mem.Allocator, child: *ChildProcess, hash: []const u8) !Worker {
+        const zigHash = try alloc.dupe(u8, hash);
+        return Worker{ .child = child, .hash = zigHash };
+    }
+
+    pub fn deinit(self: Worker, alloc: std.mem.Allocator) void {
+        alloc.destroy(self.child);
+        alloc.free(self.hash);
+    }
 };
 
 pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
@@ -30,8 +41,9 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
     var done = false;
 
     while (!done) {
-        var iter = deps.valueIterator();
-        while (iter.next()) |dep| {
+        var iter = deps.iterator();
+        while (iter.next()) |entry| {
+            const dep = entry.value_ptr;
             if (dep.done) {
                 continue;
             }
@@ -63,7 +75,8 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
             child.stdout_behavior = .Pipe;
             child.stderr_behavior = .Pipe;
             try child.spawn();
-            try workers.append(.{ .child = child, .dep = dep });
+            const worker = try Worker.init(alloc, child, entry.key_ptr.*);
+            try workers.append(worker);
         }
 
         const len_before = deps.count();
@@ -71,9 +84,9 @@ pub fn fetch(alloc: Allocator, deps: *StringHashMap(Dependency)) !void {
 
         for (workers.items) |worker| {
             const child = worker.child;
-            const dep = worker.dep;
+            var dep = deps.getPtr(worker.hash).?;
 
-            defer alloc.destroy(child);
+            defer worker.deinit(alloc);
 
             var stdoutBuf: std.ArrayList(u8) = .{};
             var stderrBuf: std.ArrayList(u8) = .{};
