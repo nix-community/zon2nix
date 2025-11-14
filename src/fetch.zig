@@ -119,8 +119,7 @@ pub fn fetch(alloc: Allocator, io: Io, deps: *StringHashMap(Dependency)) !void {
                 .ignore_unknown_fields = true,
                 .allocate = .alloc_always,
             }) catch |err| {
-                // TODO wait here? payload empty yet...
-                log.err("Error in JSON parsing of this payload:\n{s}\nurl: {s}, rev: {?s}\n", .{ stdout_slice, dep.url, dep.rev });
+                log.err("Error in JSON parsing of this payload:\n{s}\ndep: {f}\n", .{ stdout_slice, dep });
                 return err;
             };
             defer res.deinit();
