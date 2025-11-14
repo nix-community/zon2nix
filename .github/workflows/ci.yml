@@ -31,7 +31,7 @@ jobs:
       - name: Run executable on zls
         run: |
           git clone https://github.com/zigtools/zls
-          nix run .#default_0_13 -- zls
+          nix run .#overlay_0_16 -- zls
           nix run . -- zls
 
   format:

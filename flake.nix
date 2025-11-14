@@ -42,6 +42,7 @@
             zig_0_13
             zig_0_14
             ;
+          zig_0_16 = zigpkgs.master-2025-11-13;
         in
         {
           _module.args.pkgs = import inputs.nixpkgs {
@@ -69,6 +70,19 @@
             };
             default_0_13 = callPackage ./nix/package.nix {
               zig = zig_0_13;
+            };
+            overlay_0_16 = callPackage ./nix/package.nix {
+              zig = zig_0_16.overrideAttrs (
+                f: p: {
+                    passthru.hook = callPackage "${inputs.nixpkgs}/pkgs/development/compilers/zig/hook.nix" {
+                      zig = pkgs.lib.recursiveUpdate f.finalPackage {
+                        # Aparantly, `platforms` and `maintainers` are missing from the nightly. We use the ones
+                        # from 0.14, assuming that the values are the same.
+                        meta = { inherit (zig_0_14.meta) platforms maintainers; };
+                      };
+                    };
+                  }
+              );
             };
           };
         };
