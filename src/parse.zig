@@ -129,7 +129,7 @@ test parse {
     const alloc = arena.allocator();
 
     var deps = StringHashMap(Dependency).init(alloc);
-    const basic = try Io.Dir.cwd().openFile(io, "fixtures/basic.zon", .{});
+    const basic = try Io.Dir.cwd().openFile(io, "fixtures/unittest/basic.zon", .{});
     defer basic.close(io);
     try parse(alloc, io, &deps, basic);
 

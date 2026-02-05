@@ -34,6 +34,11 @@ jobs:
           nix run .#overlay_0_16 -- zls
           nix run . -- zls
 
+      - name: Run integration tests for issue 60
+        run: |
+          nix run .#overlay_0_16 -- fixtures/integrationtest/issue60-1-build.zig.zon
+          nix run .#overlay_0_16 -- fixtures/integrationtest/issue60-2-build.zig.zon
+
   format:
     name: format
     runs-on: ubuntu-latest
