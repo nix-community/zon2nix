@@ -25,19 +25,20 @@ const DebugAllocator = @field(std.heap, if (zig_legacy_version) "GeneralPurposeA
 
 var debug_allocator: DebugAllocator(.{}) = if (zig_legacy_version) .{} else .init;
 
-pub fn main() !void {
-    var args = process.args();
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
+    var args = init.minimal.args.iterate();
     _ = args.skip();
-    const dir = fs.cwd();
+    const dir = std.Io.Dir.cwd();
 
     const file = try if (args.next()) |path|
-        if ((try dir.statFile(path)).kind == .directory)
-            (try dir.openDir(path, .{})).openFile("build.zig.zon", .{})
+        if ((try dir.statFile(io, path, .{})).kind == .directory)
+            (try dir.openDir(io, path, .{})).openFile(io, "build.zig.zon", .{})
         else
-            dir.openFile(path, .{})
+            dir.openFile(io, path, .{})
     else
-        dir.openFile("build.zig.zon", .{});
-    defer file.close();
+        dir.openFile(io, "build.zig.zon", .{});
+    defer file.close(io);
 
     const gpa, const is_debug = gpa: {
         break :gpa switch (builtin.mode) {
@@ -59,11 +60,11 @@ pub fn main() !void {
         deps.deinit();
     }
 
-    try parse(gpa, &deps, file);
-    try fetch(gpa, &deps);
+    try parse(gpa, io, &deps, file);
+    try fetch(gpa, io, &deps);
 
     var buffer: [4096]u8 = undefined;
-    var stdoutWriter = fs.File.stdout().writer(&buffer);
+    var stdoutWriter = Io.File.stdout().writer(io, &buffer);
     const stdout = &stdoutWriter.interface;
 
     try write(gpa, stdout, deps);

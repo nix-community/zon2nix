@@ -1,0 +1,12 @@
+.{
+    .name = ._2d_physics,
+    .version = "0.15.2",
+    .dependencies = .{
+        .sdl3 = .{
+            .url = "git+https://codeberg.org/7Games/zig-sdl3?ref=v0.1.6#9c1842246c59f03f87ba59b160ca7e3d5e5ce972",
+            .hash = "sdl3-0.1.6-NmT1Q5sQJgCzT6hLj7WOSrwxE0Qsef1wIkDopbOOFru0",
+        },
+    },
+    .paths = .{""},
+    .fingerprint = 0x2413c354853d8fc7,
+}

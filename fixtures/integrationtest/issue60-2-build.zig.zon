@@ -1,0 +1,13 @@
+.{
+    .name = .issue60_2,
+    .version = "0.15.2",
+    .dependencies = .{
+        .sdl_ttf = .{
+            .url = "git+https://github.com/libsdl-org/SDL_ttf#release-3.2.2",
+            .hash = "N-V-__8AAF2JgAA_Y5Qzm3b226N8y7ivM-qFVpCo9NkbfO8Y",
+            .lazy = true,
+        },
+    },
+    .paths = .{""},
+    .fingerprint = 0x11ca8a66f4e05464,
+}

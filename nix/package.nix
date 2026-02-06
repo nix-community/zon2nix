@@ -3,6 +3,7 @@
   stdenv,
   zig,
   nix,
+  debug ? false
 }:
 stdenv.mkDerivation {
   pname = "zon2nix";
@@ -16,9 +17,9 @@ stdenv.mkDerivation {
 
   zigBuildFlags = [
     "-Dnix=${lib.getExe nix}"
-  ];
+  ] ++ (if debug then ["-Doptimize=Debug"] else []);
 
   zigCheckFlags = [
     "-Dnix=${lib.getExe nix}"
-  ];
+  ] ++ (if debug then ["-Doptimize=Debug"] else []);
 }

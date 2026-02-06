@@ -21,7 +21,7 @@ jobs:
       - name: Set up zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0-dev.1326+2e6f7d36b
+          version: 0.16.0-dev.2471+e9eadee00
 
       - uses: DeterminateSystems/nix-installer-action@main
 
@@ -34,6 +34,12 @@ jobs:
           nix run .#overlay_0_16 -- zls
           nix run . -- zls
 
+      - name: Run integration tests for issue 60
+        run: |
+          nix --version
+          nix run .#overlay_0_16_debug -- fixtures/integrationtest/issue60-1-build.zig.zon
+          nix run .#overlay_0_16_debug -- fixtures/integrationtest/issue60-2-build.zig.zon
+
   format:
     name: format
     runs-on: ubuntu-latest
@@ -44,7 +50,7 @@ jobs:
       - name: Set up zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0-dev.1326+2e6f7d36b
+          version: 0.16.0-dev.2471+e9eadee00
 
       - name: Check formatting
         run: zig fmt --check .

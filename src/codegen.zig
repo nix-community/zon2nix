@@ -33,18 +33,35 @@ pub fn write(alloc: Allocator, out: anytype, deps: StringHashMap(Dependency)) !v
         const key = entry.key_ptr.*;
         const dep = entry.value_ptr.*;
         const nix_hash = dep.nix_hash orelse return error.MissingNixHash;
-        if (dep.rev) |rev| {
-            try out.print(
-                \\  {{
-                \\    name = "{s}";
-                \\    path = fetchgit {{
-                \\      url = "{s}";
-                \\      rev = "{s}";
-                \\      hash = "{s}";
-                \\    }};
-                \\  }}
-                \\
-            , .{ key, dep.url, rev, nix_hash });
+        if (dep.parameters) |parameters| {
+            switch (parameters) {
+                .rev => |rev| {
+                    try out.print(
+                        \\  {{
+                        \\    name = "{s}";
+                        \\    path = fetchgit {{
+                        \\      url = "{s}";
+                        \\      rev = "{s}";
+                        \\      hash = "{s}";
+                        \\    }};
+                        \\  }}
+                        \\
+                    , .{ key, dep.url, rev, nix_hash });
+                },
+                .ref => |ref| {
+                    try out.print(
+                        \\  {{
+                        \\    name = "{s}";
+                        \\    path = fetchgit {{
+                        \\      url = "{s}";
+                        \\      ref = "{s}";
+                        \\      hash = "{s}";
+                        \\    }};
+                        \\  }}
+                        \\
+                    , .{ key, dep.url, ref, nix_hash });
+                },
+            }
         } else {
             try out.print(
                 \\  {{
