@@ -56,6 +56,7 @@ pub fn parse(alloc: Allocator, io: Io, deps: *StringHashMap(Dependency), file: F
         for (deps_init.ast.fields) |dep_idx| {
             var hash: ?[]const u8 = null;
             var url: ?[]const u8 = null;
+            var has_path: bool = false;
 
             defer {
                 if (url) |u| {
@@ -77,6 +78,8 @@ pub fn parse(alloc: Allocator, io: Io, deps: *StringHashMap(Dependency), file: F
                     url = try parseString(alloc, ast, dep_field_idx);
                 } else if (mem.eql(u8, name, "hash")) {
                     hash = try parseString(alloc, ast, dep_field_idx);
+                } else if (mem.eql(u8, name, "path")) {
+                    has_path = true;
                 }
             }
 
@@ -105,7 +108,7 @@ pub fn parse(alloc: Allocator, io: Io, deps: *StringHashMap(Dependency), file: F
                     try deps.put(hash.?, dep);
                 }
             } else {
-                return error.parseError;
+                if (!has_path) return error.InvalidDependency;
             }
         }
     }
