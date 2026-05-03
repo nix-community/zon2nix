@@ -14,7 +14,10 @@ To use the generated file, add this to your Nix expression:
 
 ```nix
 postPatch = ''
-  ln -s ${callPackage ./deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+  # For Zig version < 0.16.0, uncomment the following line
+  # ln -s ${callPackage ./deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+  # For Zig version >= 0.16.0
+  ln -s ${pkgs.callPackage ./nix/deps.nix { }} zig-pkg
 '';
 ```
 

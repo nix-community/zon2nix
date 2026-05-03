@@ -12,7 +12,7 @@ stdenv.mkDerivation {
   src = ../.;
 
   nativeBuildInputs = [
-    zig.hook
+    zig
   ];
 
   zigBuildFlags = [
