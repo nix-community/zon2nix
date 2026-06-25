@@ -36,8 +36,11 @@ pub fn main(init: std.process.Init) !void {
             (try dir.openDir(io, path, .{})).openFile(io, "build.zig.zon", .{})
         else
             dir.openFile(io, path, .{})
+    else if (try std.Io.File.stdin().isTty(io))
+        dir.openFile(io, "build.zig.zon", .{})
     else
-        dir.openFile(io, "build.zig.zon", .{});
+        std.Io.File.stdin();
+
     defer file.close(io);
 
     const gpa, const is_debug = gpa: {
